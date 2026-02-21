@@ -49,7 +49,7 @@ GROQ_BASE_URL=https://api.groq.com/openai/v1
 2) Install dependencies
 ```bash
 uv venv
-uv pip install fastapi uvicorn python-dotenv transformers torch requests pydantic
+uv sync
 ```
 
 3) Run the app
