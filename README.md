@@ -1,6 +1,6 @@
-# HERA — Empathy Coach (BART Guard + Llama via Groq)
+# PACE — Parental Assistance Communication Engine
 
-HERA helps parents turn an **observed situation** into a calm, de-escalated message they can send to their teen using Non-Violent Communication.
+PACE helps parents turn an **observed situation** into a calm, de-escalated message they can send to their teen using Non-Violent Communication.
 
 The app uses a **safety guard + LLM pipeline**:
 1) A BART zero-shot classifier filters unsafe or out-of-scope requests  
@@ -60,5 +60,5 @@ Open http://localhost:8000
 
 ## Notes on GCP deployment
 - Run FastAPI on Cloud Run or a VM.
-- The LLM runs via Groq; set `GROQ_API_KEY` (and optionally `GROQ_MODEL`) as environment variables in your deployment.
+- The LLM runs via Groq. Set `GROQ_API_KEY` (and optionally `GROQ_MODEL`) as environment variables in your deployment.
 - The BART guard runs on CPU (latency will be higher); GPU improves speed.

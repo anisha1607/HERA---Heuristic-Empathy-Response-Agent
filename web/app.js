@@ -109,7 +109,7 @@ async function send() {
     ];
 
     addMessage({
-      role: "hera",
+      role: "pace",
       text: (data.response ?? "").trim(),
       metaChips: chips,
       refused
@@ -118,7 +118,7 @@ async function send() {
   } catch (err) {
     showTyping(false);
     addMessage({
-      role: "hera",
+      role: "pace",
       text: "Sorry — something went wrong calling the server. Check the backend logs and Ollama.",
       metaChips: [chip("ERROR", "bad")],
       refused: true
@@ -133,9 +133,9 @@ function clearChat() {
   chatEl.innerHTML = "";
   // small welcome
   addMessage({
-    role: "hera",
+    role: "pace",
     text:
-`Hi, I am HERA. Tell me what you’re noticing with your child, and I will help you
+`Hi, I am PACE. Tell me what you’re noticing with your child, and I will help you
 find a calm way to respond.`,
     metaChips: [chip("ready", "good")]
   });

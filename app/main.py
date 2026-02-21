@@ -15,7 +15,7 @@ from app.prompts import SYSTEM_PROMPT
 
 load_dotenv()
 
-app = FastAPI(title="HERA")
+app = FastAPI(title="PACE")
 
 guard = BartGuard()
 # ollama = OllamaClient()
