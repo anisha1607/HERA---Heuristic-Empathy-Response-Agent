@@ -4,10 +4,11 @@ const sendBtn = document.getElementById("sendBtn");
 const clearBtn = document.getElementById("clearBtn");
 
 let isLoading = false;
+let sessionId = Math.random().toString(36).substring(2, 11);
 
 function esc(str) {
   return String(str ?? "").replace(/[&<>"']/g, s => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   }[s]));
 }
 
@@ -24,25 +25,25 @@ function addMessage({ role, text, metaChips = [], refused = false }) {
   const msg = document.createElement("div");
   msg.className = `msg ${role}${refused ? " refused" : ""}`;
 
-  const row = document.createElement("div");
-  row.className = "msg-row";
+  const content = document.createElement("div");
+  content.className = "msg-content";
 
   const avatar = document.createElement("div");
   avatar.className = "avatar";
-  avatar.textContent = role === "user" ? "U" : "H";
+  avatar.textContent = role === "user" ? "U" : "P";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.textContent = text;
 
-  row.appendChild(avatar);
-  row.appendChild(bubble);
+  content.appendChild(avatar);
+  content.appendChild(bubble);
 
   const meta = document.createElement("div");
-  meta.className = "meta";
+  meta.className = "msg-meta";
   meta.innerHTML = `<span>${esc(nowTime())}</span>` + metaChips.map(c => c).join("");
 
-  msg.appendChild(row);
+  msg.appendChild(content);
   msg.appendChild(meta);
 
   chatEl.appendChild(msg);
@@ -50,7 +51,8 @@ function addMessage({ role, text, metaChips = [], refused = false }) {
 }
 
 function chip(text, kind = "good") {
-  return `<span class="chip ${kind}">${esc(text)}</span>`;
+  const kindClass = kind === "good" ? "chip-ok" : kind === "warn" ? "chip-warn" : "chip-bad";
+  return `<span class="status-chip ${kindClass}">${esc(text)}</span>`;
 }
 
 function setLoading(v) {
@@ -65,7 +67,7 @@ function showTyping(show) {
     if (existing) return;
     const wrap = document.createElement("div");
     wrap.id = "typing";
-    wrap.className = "typing";
+    wrap.className = "typing-indicator";
     wrap.innerHTML = `<span class="dot"></span><span class="dot"></span><span class="dot"></span>`;
     chatEl.appendChild(wrap);
     scrollToBottom();
@@ -89,11 +91,10 @@ async function send() {
     const res = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ situation })
+      body: JSON.stringify({ situation, session_id: sessionId })
     });
 
     const data = await res.json();
-
     showTyping(false);
 
     const g = data.guard_label ?? "UNKNOWN";
@@ -119,7 +120,7 @@ async function send() {
     showTyping(false);
     addMessage({
       role: "pace",
-      text: "Sorry — something went wrong calling the server. Check the backend logs and Ollama.",
+      text: "Sorry — something went wrong with the connection.",
       metaChips: [chip("ERROR", "bad")],
       refused: true
     });
@@ -131,12 +132,10 @@ async function send() {
 
 function clearChat() {
   chatEl.innerHTML = "";
-  // small welcome
+  sessionId = Math.random().toString(36).substring(2, 11);
   addMessage({
     role: "pace",
-    text:
-`Hi, I am PACE. Tell me what you’re noticing with your child, and I will help you
-find a calm way to respond.`,
+    text: `Hi, I am PACE. Tell me what you are noticing with your child, and I will help you find a calm way to respond.`,
     metaChips: [chip("ready", "good")]
   });
 }
@@ -150,7 +149,7 @@ inputEl.addEventListener("keydown", (e) => {
 
 inputEl.addEventListener("input", () => {
   inputEl.style.height = "auto";
-  inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + "px";
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + "px";
 });
 
 sendBtn.addEventListener("click", send);

@@ -12,6 +12,7 @@ from app.bart_guard import BartGuard, REFUSAL
 # from app.ollama_client import OllamaClient
 from app.groq_client import GroqClient
 from app.prompts import SYSTEM_PROMPT
+from app.session_manager import SessionStore
 
 load_dotenv()
 
@@ -23,11 +24,13 @@ groq = GroqClient()
 
 # LLAMA_MODEL = os.getenv("LLAMA_MODEL", "llama3.1:latest")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+session_store = SessionStore(groq, GROQ_MODEL)
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 
 class ChatRequest(BaseModel):
     situation: str
+    session_id: str = "default"
 
 
 class ChatResponse(BaseModel):
@@ -59,6 +62,7 @@ def chat(req: ChatRequest):
         )
 
     refuse, res = guard.should_refuse(situation)
+    print(f"DEBUG GUARD: situation='{situation}' label='{res.label}' confidence={res.confidence:.2f}")
     if refuse:
         return ChatResponse(
             response=REFUSAL,
@@ -66,6 +70,10 @@ def chat(req: ChatRequest):
             guard_label=res.label,
             guard_confidence=res.confidence,
         )
+
+    # Get session context
+    session = session_store.get_session(req.session_id)
+    derived_context = session.derived_context
 
     # Keep the user prompt short to reduce latency.
     user_payload = f"""
@@ -76,7 +84,7 @@ def chat(req: ChatRequest):
     """
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": SYSTEM_PROMPT.format(derived_context=derived_context)},
         {"role": "user", "content": user_payload},
     ]
 
@@ -98,10 +106,7 @@ def chat(req: ChatRequest):
         # print("OLLAMA ERROR:", repr(e))
         print("GROQ ERROR:", repr(e))
         output = (
-            "A) Tone check: I’m having trouble generating right now.\n"
-            "B) Needs guess: Parent need: clarity. Teen need: safety.\n"
-            "C) De-escalated message to send: Could you try again in a moment?\n"
-            "D) One optional follow-up question: What outcome matters most to you here?"
+            "There has been an error, try again in a while!"
         )
 
     # Lightweight post-check (no regex): block clearly harmful instructions.
@@ -121,6 +126,10 @@ def chat(req: ChatRequest):
             guard_label="POSTCHECK_BLOCK",
             guard_confidence=1.0,
         )
+
+    session_store.add_message(req.session_id, "user", situation)
+    session_store.add_message(req.session_id, "assistant", output.strip())
+    session_store.update_derived_context(req.session_id)
 
     return ChatResponse(
         response=output.strip(),

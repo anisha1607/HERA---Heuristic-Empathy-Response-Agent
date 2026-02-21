@@ -16,14 +16,16 @@ LABEL_SPY = "OUT_OF_SCOPE_SPYING_OR_HACKING"
 LABEL_LEGAL = "OUT_OF_SCOPE_LEGAL_ADVICE"
 LABEL_MED = "OUT_OF_SCOPE_MEDICAL_DIAGNOSIS"
 LABEL_ADV = "OUT_OF_SCOPE_ADVERSARIAL_OR_HARMFUL"
+LABEL_OUT = "OUT_OF_SCOPE_GENERAL_KNOWLEDGE"
 
-# We run zero-shot classification with natural-language descriptions (works better than single keywords)
+# We run zero-shot classification with natural-language descriptions
 DESCRIPTIONS: Dict[str, str] = {
-    LABEL_IN: "parenting communication advice, empathy coaching, or how to talk to a child in a supportive way",
-    LABEL_SPY: "getting instructions to spy on, hack, track, or monitor a phone secretly",
-    LABEL_LEGAL: "legal advice such as custody, suing, court, or legal procedures",
-    LABEL_MED: "medical diagnosis, prescribing treatment, medication advice, or symptom evaluation",
-    LABEL_ADV: "harmful, harassing, hateful content, or jokes targeting vulnerable teens",
+    LABEL_IN: "a parent seeking help with empathetic communication, de-escalating conflict, or using Non-Violent Communication (NVC) with their child",
+    LABEL_SPY: "requests to read private text messages, hack social media, track location secretly, or bypass a child's digital privacy or phone security",
+    LABEL_LEGAL: "legal questions about divorce, custody battles, court procedures, lawyers, or suing people",
+    LABEL_MED: "medical questions about medication dosages, diagnosing mental health conditions, or treating physical illness symptoms",
+    LABEL_ADV: "harmful behavior, bullying, emotional manipulation, hate speech, malicious intent, or encouraging unsafe actions",
+    LABEL_OUT: "general knowledge, recipes, baking, computer programming, history, math, or anything unrelated to parenting and communication",
 }
 
 HYPOTHESIS_TEMPLATE = "This message is about {}."
@@ -51,19 +53,33 @@ class BartGuard:
             sequences=text,
             candidate_labels=candidates,
             hypothesis_template=HYPOTHESIS_TEMPLATE,
-            multi_label=False,
+            multi_label=True, # Allow labels to be evaluated independently
         )
 
         desc_to_label = {v: k for k, v in DESCRIPTIONS.items()}
         scores = {desc_to_label[lbl]: float(score) for lbl, score in zip(out["labels"], out["scores"])}
 
-        best_desc = out["labels"][0]
-        best_score = float(out["scores"][0])
+        # For multi-label, we return the highest scoring non-IN label as the representative refusal label
+        # but we also keep the full score map.
+        sorted_labels = out["labels"]
+        sorted_scores = out["scores"]
+        
+        best_desc = sorted_labels[0]
+        best_score = float(sorted_scores[0])
         best_label = desc_to_label[best_desc]
+        
         return GuardResult(label=best_label, confidence=best_score, scores=scores)
 
     def should_refuse(self, text: str) -> Tuple[bool, GuardResult]:
         res = self.classify(text)
-        if res.label != LABEL_IN and res.confidence >= self.threshold:
-            return True, res
+        
+        # In multi-label mode, we check EVERY category.
+        # If any out-of-scope category exceeds the threshold, we refuse.
+        for label, score in res.scores.items():
+            if label != LABEL_IN and score >= self.threshold:
+                # Update the result to reflect the specific violation found
+                res.label = label
+                res.confidence = score
+                return True, res
+            
         return False, res
