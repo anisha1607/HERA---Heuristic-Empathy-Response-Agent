@@ -38,13 +38,9 @@ If detected, the app returns a scripted refusal message.
 
 ## Setup
 1) Create env
-Create a `.env` file (in the project root) with at least:
+Create a `.env` file (in the project root) with:
 ```bash
 GROQ_API_KEY=YOUR_KEY_HERE
-```
-
-Optional:
-```bash
 GROQ_MODEL=llama-3.1-8b-instant
 GUARD_THRESHOLD=0.60
 GROQ_BASE_URL=https://api.groq.com/openai/v1
@@ -58,7 +54,7 @@ uv pip install fastapi uvicorn python-dotenv transformers torch requests pydanti
 
 3) Run the app
 ```bash
-uv run uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --port 8000
 ```
 Open http://localhost:8000
 
