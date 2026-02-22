@@ -101,13 +101,12 @@ async function send() {
     const conf = typeof data.guard_confidence === "number" ? data.guard_confidence : null;
     const refused = !!data.refused;
 
-    const confText = conf === null ? "" : ` ${conf.toFixed(2)}`;
-    const guardChipKind = refused ? "bad" : (conf !== null && conf < 0.45 ? "warn" : "good");
-
-    const chips = [
-      chip(`guard=${g}${confText}`, guardChipKind),
-      refused ? chip("REFUSED", "bad") : chip("OK", "good"),
-    ];
+    const chips = [];
+    if (refused) {
+      const confText = conf === null ? "" : ` ${conf.toFixed(2)}`;
+      chips.push(chip(`guard=${g}${confText}`, "bad"));
+      chips.push(chip("REFUSED", "bad"));
+    }
 
     addMessage({
       role: "pace",

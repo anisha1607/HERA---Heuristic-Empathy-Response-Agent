@@ -1,7 +1,7 @@
 [project]
-name = "hera"
+name = "pace"
 version = "0.2.0"
-description = "HERA: Empathy coach chatbot with BART pre-LLM guard and Llama generation via Ollama"
+description = "PACE: Parent-child AI Communication Empathizer - Empathy coach chatbot with BART pre-LLM guard and Llama generation via Groq"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-hera-dev = "app.main:run"
+pace-dev = "app.main:run"
 
 [tool.uv]
 # This tells uv to treat the directory as an installable package

@@ -109,24 +109,6 @@ def chat(req: ChatRequest):
             "There has been an error, try again in a while!"
         )
 
-    # Lightweight post-check (no regex): block clearly harmful instructions.
-    lower = output.lower()
-    forbidden = [
-        "keylogger",
-        "stalkerware",
-        "hack",
-        "steal password",
-        "track gps without",
-        "monitor secretly",
-    ]
-    if any(term in lower for term in forbidden):
-        return ChatResponse(
-            response=REFUSAL,
-            refused=True,
-            guard_label="POSTCHECK_BLOCK",
-            guard_confidence=1.0,
-        )
-
     session_store.add_message(req.session_id, "user", situation)
     session_store.add_message(req.session_id, "assistant", output.strip())
     session_store.update_derived_context(req.session_id)
